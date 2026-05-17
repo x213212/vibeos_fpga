@@ -99,6 +99,9 @@ them from a known-good local backup before running the stable loader.
 
 - Do not commit `vibeos/.build`, `os.bin`, bitstreams, DCPs, or Vivado run
   directories.
+- Licensing is centralized in `LICENSE` and `THIRD_PARTY_LICENSES.md`. Original
+  VibeOS FPGA code is released under The Unlicense; vendored third-party code
+  keeps its own license.
 - The detailed recovery and debug notes live in
   `project_2/STABLE_UI_ETH_MINIMAL_SOP.md`.
 - Current FPGA minimal input/network handling is mostly cooperative polling.

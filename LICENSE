@@ -1,0 +1,55 @@
+VibeOS FPGA Top-Level Licensing
+================================
+
+This repository is an aggregate of original VibeOS FPGA work and vendored
+third-party components.
+
+Original Project Code
+---------------------
+
+Unless a file or directory carries a different license notice, code and
+documentation written specifically for this repository by the VibeOS FPGA
+project owner are released under The Unlicense below. To the maximum extent
+allowed by law, those original portions are dedicated to the public domain.
+
+This dedication applies only to original VibeOS FPGA code. It does not remove
+or replace the licenses of third-party code included in this repository.
+
+Third-Party Code
+----------------
+
+Vendored, imported, or derived third-party components remain under their own
+licenses. Keep their copyright notices, license files, and required notices
+when copying, modifying, distributing, or building from this repository.
+
+The central third-party license inventory is:
+
+    THIRD_PARTY_LICENSES.md
+
+If a component-local license file and this top-level summary disagree, the
+component-local license file controls.
+
+The Unlicense
+-------------
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+software, either in source code form or as a compiled binary, for any purpose,
+commercial or non-commercial, and by any means.
+
+In jurisdictions that recognize copyright laws, the author or authors of this
+software dedicate any and all copyright interest in the software to the public
+domain. We make this dedication for the benefit of the public at large and to
+the detriment of our heirs and successors. We intend this dedication to be an
+overt act of relinquishment in perpetuity of all present and future rights to
+this software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <http://unlicense.org/>
