@@ -1,4 +1,5 @@
 # vibeos_fpga
+<img width="2048" height="956" alt="image" src="https://github.com/user-attachments/assets/595ebbb3-9c3b-42f8-848c-c5e1b9510fdb" />
 <img width="2048" height="956" alt="image" src="https://github.com/user-attachments/assets/414cf18e-129d-4edd-ad3f-3e7cd6be8898" />
 <img width="2048" height="956" alt="image" src="https://github.com/user-attachments/assets/9a4c57aa-f8c3-4c2f-ba0e-bcb7d0bdc0cb" />
 <img width="2048" height="956" alt="image" src="https://github.com/user-attachments/assets/4ddebbe3-368e-4991-8b8f-0aa879f96798" />
