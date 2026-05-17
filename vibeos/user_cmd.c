@@ -1105,7 +1105,17 @@ static void exec_single_cmd_legacy(struct Window *w, char *cmd) {
         extern struct Window fs_tmp_window; struct Window *ctx = &fs_tmp_window;
         memset(ctx, 0, sizeof(*ctx)); ctx->cwd_bno = target_bno;
         struct dir_block *db = load_current_dir(ctx);
-        if(!db) { lib_strcpy(out, "ERR: Run 'format'."); return; }
+        if(!db) {
+#ifdef FPGA_MINIMAL
+            if (*path_arg == '\0' || strcmp(path_arg, "/") == 0 ||
+                strcmp(path_arg, "/root") == 0 || strcmp(path_arg, "~") == 0) {
+                sd_fat_list_root(out, OUT_BUF_SIZE, all);
+                return;
+            }
+#endif
+            lib_strcpy(out, "ERR: Run 'format'.");
+            return;
+        }
         int printed = 0;
         int stream_lines = 0;
         out[0] = '\0';

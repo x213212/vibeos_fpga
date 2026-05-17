@@ -71,7 +71,11 @@ sd status
 sd ls
 sdls
 ls /sd
+ls
 ```
+
+In `profile=fpga_minimal`, plain `ls` falls back to the SD card root when the
+temporary `/root` RAM disk has not been formatted yet.
 
 The stable Ethernet loader uses:
 

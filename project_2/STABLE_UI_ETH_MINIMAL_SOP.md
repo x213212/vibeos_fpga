@@ -96,6 +96,7 @@ sd status
 sd ls
 sdls
 ls /sd
+ls
 ```
 
 The SD card path is source-backed by:
@@ -117,8 +118,9 @@ project_2/sdio_probe_output.txt
 
 Do not confuse this with the VibeOS RAM disk fallback in
 `vibeos/drivers/virtio/virtio_disk.c`. In `FPGA_MINIMAL`, that RAM disk is
-cleared at boot, so plain `ls` on `/root` can still say `ERR: Run 'format'.`
-Use `ls /sd` or `sdls` to read the physical SD card root directory.
+cleared at boot. The shell now handles that case by making plain `ls` fall back
+to the physical SD card root directory. Explicit forms `ls /sd` and `sdls`
+still go directly to SD.
 
 Do not use a newly generated bitstream for this baseline test. If keyboard
 input or the UI breaks immediately after a network change, rerun the exact
