@@ -21,6 +21,71 @@ smallest possible steps:
 Do not overwrite the known-good UI bitstream path. Ethernet work must use a
 separate output directory.
 
+## Last Working Network Run Flow
+
+This is the last verified flow where UI, USB keyboard/mouse, lwIP HTTP, and
+ping were all alive. Use this before changing Ethernet, USB, or GUI code.
+
+Run from Windows PowerShell:
+
+```powershell
+cd H:\testproject
+
+wsl --cd /mnt/h/testproject/vibeos --exec make profile=fpga_minimal FPGA_MTIME_HZ=50000000 os.bin
+
+powershell.exe -ExecutionPolicy Bypass -File H:\testproject\project_2\release_vibeos_eth_stable.ps1 H:/testproject/vibeos/os.bin
+
+Start-Sleep -Seconds 5
+ping -n 6 192.168.0.154
+curl.exe --max-time 5 http://192.168.0.154/
+```
+
+The stable release script intentionally uses this Ethernet-capable 50 MHz
+bitstream and its matching PS7 init:
+
+```text
+BIT:
+H:\testproject\project_2\riscv_ps_ddr_hw_eth_clkdomain_probe_50\riscv_ps_ddr_hw.runs\impl_1\riscv_ps_ddr_wrapper.bit
+
+PS7 INIT:
+H:\testproject\project_2\riscv_ps_ddr_hw_eth_clkdomain_probe_50\riscv_ps_ddr_hw.srcs\sources_1\bd\riscv_ps_ddr\ip\riscv_ps_ddr_processing_system7_0_0\ps7_init.tcl
+```
+
+Expected proof:
+
+```text
+ping 192.168.0.154 -> 6 replies, 0% loss
+curl http://192.168.0.154/ ->
+<html><body><h1>VibeOS Ethernet OK</h1><p>lwIP + Zynq GEM0 is running.</p><p>IP: 192.168.0.154</p></body></html>
+```
+
+Expected VibeOS-side commands:
+
+```text
+ethstat
+ssh probe 192.168.0.152:2221
+ssh set root@192.168.0.152:2221
+ssh auth <password>
+ssh exec uname -a
+```
+
+Do not use a newly generated bitstream for this baseline test. If keyboard
+input or the UI breaks immediately after a network change, rerun the exact
+`release_vibeos_eth_stable.ps1` flow above first. If the exact flow passes
+again, the hardware/loader baseline is still good and the bug is in the new
+source change.
+
+For OS-only reloads on the already programmed stable Ethernet bitstream, this
+is allowed:
+
+```powershell
+& 'H:\Xilinx\vivado\Vivado\2019.2\bin\xsdb.bat' H:\testproject\project_2\release_vibeos_no_usb_reset.tcl H:/testproject/vibeos/os.bin
+```
+
+But when recovering from a confusing state, prefer the full stable release
+script because it reprograms the known-good Ethernet bitstream and reruns the
+matching PS7 init before loading the OS.
+
 ## Known-Good Baseline
 
 Known-good UI rollback bitstream:
