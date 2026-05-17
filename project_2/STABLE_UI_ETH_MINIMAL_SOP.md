@@ -21,6 +21,26 @@ smallest possible steps:
 Do not overwrite the known-good UI bitstream path. Ethernet work must use a
 separate output directory.
 
+## Toolchain Version Baseline
+
+The last working Ethernet/UI flow was verified with this toolchain:
+
+```text
+Vivado:            v2019.2 64-bit
+Vivado SW Build:   2708876
+Vivado IP Build:   2700528
+Local Vivado path: H:\Xilinx\vivado\Vivado\2019.2
+
+WSL:               2.6.2.0
+WSL distro:        Ubuntu 22.04.5 LTS
+WSL kernel:        6.6.87.2-microsoft-standard-WSL2
+RISC-V GCC:        riscv64-unknown-elf-gcc 10.2.0
+Windows:           10.0.26200.7171
+```
+
+If another machine uses a different Vivado or WSL version, verify the stable
+run flow before changing RTL, Tcl, USB, or Ethernet source.
+
 ## Last Working Network Run Flow
 
 This is the last verified flow where UI, USB keyboard/mouse, lwIP HTTP, and

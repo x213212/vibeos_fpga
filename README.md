@@ -15,6 +15,23 @@ bitstreams locally from the source and scripts.
 
 ## Last Known Working Ethernet/UI Flow
 
+### Tool Versions
+
+This flow was last verified with:
+
+```text
+Vivado:            v2019.2 64-bit
+Vivado SW Build:   2708876
+Vivado IP Build:   2700528
+Local Vivado path: H:\Xilinx\vivado\Vivado\2019.2
+
+WSL:               2.6.2.0
+WSL distro:        Ubuntu 22.04.5 LTS
+WSL kernel:        6.6.87.2-microsoft-standard-WSL2
+RISC-V GCC:        riscv64-unknown-elf-gcc 10.2.0
+Windows:           10.0.26200.7171
+```
+
 Run from the repository root in Windows PowerShell:
 
 ```powershell
