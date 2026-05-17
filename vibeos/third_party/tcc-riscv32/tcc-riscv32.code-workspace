@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+    ],
+    "settings": {
+        "editor.renderWhitespace": "all",
+        "files.associations": {
+            "tcc.h": "c",
+            "stddef.h": "c",
+            "cstdlib": "c",
+            "stdint.h": "c",
+            "stdint-gcc.h": "c",
+            "sstream": "c",
+            "tcctok.h": "c"
+        }
+    }
+}

@@ -1,0 +1,67 @@
+# Build products
+*.o
+*.a
+*.elf
+*.bin
+*.dsk
+*.map
+*.lst
+*.jou
+*.log
+*.str
+*.rpt
+*.dcp
+*.bit
+*.wdb
+*.pb
+*.ltx
+*.hwdef
+*.hex
+*.dmp
+*.bin.*
+*.tar.gz
+*.zip
+*.7z
+
+# VibeOS generated output
+vibeos/.build/
+vibeos/*.bin
+vibeos/*.elf
+vibeos/*.dsk
+vibeos/hdd.dsk
+
+# Vivado generated output
+.Xil/
+xsim.dir/
+project_1/
+picorv32/
+_refs/
+_tmp*/
+.ref_*/
+usage_statistics_webtalk.*
+xilinx_tmp/
+project_2/.Xil/
+project_2/*.runs/
+project_2/*.cache/
+project_2/*.hw/
+project_2/*.sim/
+project_2/*.ip_user_files/
+project_2/riscv_ps_ddr_hw*/
+project_2/checkpoints/
+project_2/check_ifx_tmp/
+project_2/*_hw/
+project_2/xilinx_tmp/
+project_2/xsim.dir/
+
+# Local backups and probe output
+backups/
+testproject_full_backups/
+project_2/*.out
+
+# Local editor/system files
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+Thumbs.db
+Desktop.ini

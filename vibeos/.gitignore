@@ -1,0 +1,15 @@
+*.o
+*.elf
+*.bin
+*.dsk
+.build/
+wrp/wrp
+wrp/go-build/
+.gdb_history
+/tmp/mbedtls-rv-build/
+**/.*.swp
+**/.*.swo
+hdd_backups/
+
+__pycache__/
+*.pyc

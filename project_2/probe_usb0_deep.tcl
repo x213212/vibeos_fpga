@@ -1,0 +1,46 @@
+connect -url tcp:127.0.0.1:3121
+set out [open "H:/testproject/project_2/probe_usb0_deep.out" "w"]
+puts $out "PROBE_USB0_DEEP_BEGIN"
+configparams force-mem-access 1
+catch {targets -set -filter {name =~ "APU*"}}
+catch {targets -set -filter {name =~ "ARM Cortex-A9 MPCore #0"}}
+
+proc rd {name addr} {
+    global out
+    set v [mrd -value $addr]
+    puts $out [format "%s=0x%08x" $name $v]
+}
+
+rd USB0_ID        0xE0002000
+rd USB0_HWGENERAL 0xE0002004
+rd USB0_CAP      0xE0002100
+rd USB0_USBCMD   0xE0002140
+rd USB0_USBSTS   0xE0002144
+rd USB0_USBINTR  0xE0002148
+rd USB0_FRINDEX  0xE000214c
+rd USB0_CTRLDSSEG 0xE0002150
+rd USB0_PERIODICLIST 0xE0002154
+rd USB0_ASYNCLIST 0xE0002158
+rd USB0_CONFIGFLAG 0xE0002180
+rd USB0_PORTSC1  0xE0002184
+rd USB0_ULPI_VIEWPORT 0xE0002170
+rd USB0_OTGSC    0xE00021A4
+rd USB0_USBMODE  0xE00021A8
+
+rd SLCR_USB0_CLK_CTRL 0xF8000130
+rd SLCR_MIO_PIN_08 0xF8000720
+rd SLCR_MIO_PIN_28 0xF8000770
+rd SLCR_MIO_PIN_29 0xF8000774
+rd SLCR_MIO_PIN_30 0xF8000778
+rd SLCR_MIO_PIN_31 0xF800077c
+rd SLCR_MIO_PIN_32 0xF8000780
+rd SLCR_MIO_PIN_33 0xF8000784
+rd SLCR_MIO_PIN_34 0xF8000788
+rd SLCR_MIO_PIN_35 0xF800078c
+rd SLCR_MIO_PIN_36 0xF8000790
+rd SLCR_MIO_PIN_37 0xF8000794
+rd SLCR_MIO_PIN_38 0xF8000798
+rd SLCR_MIO_PIN_39 0xF800079c
+
+close $out
+disconnect

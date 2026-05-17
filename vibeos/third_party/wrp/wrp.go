@@ -1,0 +1,405 @@
+//
+// WRP - Web Rendering Proxy
+//
+// Copyright (c) 2013-2025 Antoni Sawicki
+//
+
+package main
+
+import (
+	"context"
+	"embed"
+	"flag"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"runtime"
+	"strconv"
+	"strings"
+	"syscall"
+	"text/template"
+	"time"
+
+	_ "github.com/breml/rootcerts"
+	"github.com/chromedp/chromedp"
+)
+
+const version = "4.9.3"
+
+var (
+	addr        = flag.String("l", ":8080", "Listen address:port, default :8080")
+	headless    = flag.Bool("h", true, "Headless mode / hide browser window (default true)")
+	defType     = flag.String("t", "gip", "Image type: gip|png|gif|jpg")
+	wrpMode     = flag.String("m", "html", "WRP Mode: ismap|html")
+	defImgSize  = flag.Int64("is", 200, "html mode default image size")
+	defJpgQual  = flag.Int64("q", 75, "Jpeg image quality, default 75%") // TODO: this should be form dropdown when jpeg is selected as image type
+	fgeom       = flag.String("g", "1152x600x216", "Geometry: width x height x colors, height can be 0 for unlimited")
+	htmFnam     = flag.String("ui", "wrp.html", "HTML template file for the UI")
+	delay       = flag.Duration("s", 5*time.Second, "Timeout for waiting for the page to render before screenshot")
+	userAgent   = flag.String("ua", "jnrbsn", "override chrome user agent (jnrbsn=fetch from API, empty=default)")
+	browserPath = flag.String("b", "", "browser executable path (e.g., /Applications/Brave Browser.app/Contents/MacOS/Brave Browser)")
+	searchEng   = flag.String("se", "https://duckduckgo.com/search?q=", "Search engine string")
+	userDataDir = flag.String("profile", "", "Chrome user data dir for persistent cookies/sessions")
+	bgColor     = flag.String("bgcolor", "#F0F0F0", "Background color for WRP UI")
+)
+
+var (
+	srv         http.Server
+	actx, ctx   context.Context
+	acncl, cncl context.CancelFunc
+	wrpCach wrpCache
+	defGeom     geom
+	htmlTmpl    *template.Template
+)
+
+//go:embed *.html
+var fs embed.FS
+
+type geom struct {
+	w int64
+	h int64
+	c int64
+}
+
+// TODO: there is a major overlap/duplication/triplication
+// between the 3 data structs, perhps we could reduce to just one?
+
+// Data for html template
+type uiData struct {
+	Version    string
+	WrpMode    string
+	URL        string
+	BgColor    string
+	NColors    int64
+	JQual      int64
+	Width      int64
+	Height     int64
+	Zoom       float64
+	ImgType    string
+	ImgURL     string
+	ImgSize    string
+	ImgWidth   int
+	ImgHeight  int
+	MaxSize    int64
+	MapURL     string
+	PageHeight string
+	TeXT       string
+}
+
+// Parameters for HTML print function
+type uiParams struct {
+	bgColor    string
+	pageHeight string
+	imgSize    string
+	imgURL     string
+	mapURL     string
+	imgWidth   int
+	imgHeight  int
+	text       string
+}
+
+// WRP Request
+type wrpReq struct {
+	url     string
+	width   int64
+	height  int64
+	zoom    float64
+	nColors int64
+	jQual   int64
+	mouseX  int64
+	mouseY  int64
+	keys    string
+	buttons string
+	imgType string
+	wrpMode string
+	maxSize int64
+	proxy   bool
+	w       http.ResponseWriter
+	r       *http.Request
+}
+
+func (rq *wrpReq) baseTag() string {
+	if rq.r.Method != "CONNECT" {
+		return ""
+	}
+	if addr := rq.r.Context().Value(http.LocalAddrContextKey); addr != nil {
+		return fmt.Sprintf(`<BASE HREF="http://%v/">`, addr)
+	}
+	return ""
+}
+
+func (rq *wrpReq) parseForm() {
+	rq.r.ParseForm()
+	rq.wrpMode = rq.r.FormValue("m")
+	if rq.wrpMode == "" {
+		rq.wrpMode = *wrpMode
+	}
+	rq.url = rq.r.FormValue("url")
+	if len(rq.url) > 1 && !strings.HasPrefix(rq.url, "http") {
+		rq.url = *searchEng + url.QueryEscape(rq.url)
+	}
+	// TODO: implement atoiOrZero
+	rq.width, _ = strconv.ParseInt(rq.r.FormValue("w"), 10, 64)
+	rq.height, _ = strconv.ParseInt(rq.r.FormValue("h"), 10, 64)
+	if rq.width < 10 && rq.height < 10 {
+		rq.width = defGeom.w
+		rq.height = defGeom.h
+	}
+	rq.zoom, _ = strconv.ParseFloat(rq.r.FormValue("z"), 64)
+	if rq.zoom < 0.1 {
+		rq.zoom = 1.0
+	}
+	rq.imgType = rq.r.FormValue("t")
+	switch rq.imgType {
+	case "gip", "png", "gif", "jpg":
+	default:
+		rq.imgType = *defType
+	}
+	rq.nColors, _ = strconv.ParseInt(rq.r.FormValue("c"), 10, 64)
+	if rq.nColors < 2 || rq.nColors > 256 {
+		rq.nColors = defGeom.c
+	}
+	rq.jQual, _ = strconv.ParseInt(rq.r.FormValue("q"), 10, 64)
+	if rq.jQual < 1 || rq.jQual > 100 {
+		rq.jQual = *defJpgQual
+	}
+	rq.keys = rq.r.FormValue("k")
+	rq.buttons = rq.r.FormValue("Fn")
+	rq.maxSize, _ = strconv.ParseInt(rq.r.FormValue("s"), 10, 64)
+	if rq.maxSize == 0 {
+		rq.maxSize = *defImgSize
+	}
+	log.Printf("%s WrpReq from UI Form: %+v\n", rq.r.RemoteAddr, rq)
+}
+
+func (rq *wrpReq) printUI(p uiParams) {
+	rq.w.Header().Set("Cache-Control", "max-age=0")
+	rq.w.Header().Set("Expires", "-1")
+	rq.w.Header().Set("Pragma", "no-cache")
+	rq.w.Header().Set("Content-Type", "text/html")
+	if p.bgColor == "" {
+		p.bgColor = *bgColor
+	}
+	data := uiData{
+		Version:    version,
+		WrpMode:    rq.wrpMode,
+		URL:        rq.url,
+		BgColor:    p.bgColor,
+		Width:      rq.width,
+		Height:     rq.height,
+		NColors:    rq.nColors,
+		JQual:      rq.jQual,
+		Zoom:       rq.zoom,
+		MaxSize:    rq.maxSize,
+		ImgType:    rq.imgType,
+		ImgSize:    p.imgSize,
+		ImgWidth:   p.imgWidth,
+		ImgHeight:  p.imgHeight,
+		ImgURL:     p.imgURL,
+		MapURL:     p.mapURL,
+		PageHeight: p.pageHeight,
+		TeXT:       p.text,
+	}
+	err := htmlTmpl.Execute(rq.w, data)
+	if err != nil {
+		fmt.Fprintf(rq.w, "Error: %v", err)
+	}
+}
+
+func proxyServer(w http.ResponseWriter, r *http.Request) {
+	var purl string
+	switch {
+	case r.Method == "CONNECT":
+		purl = "https://" + r.Host
+	case r.URL.Scheme == "":
+		purl = "http://" + r.Host + r.URL.RequestURI()
+	default:
+		purl = r.URL.String()
+	}
+	log.Printf("%s Proxy Request for %s\n", r.RemoteAddr, purl)
+	rq := wrpReq{
+		r:       r,
+		w:       w,
+		url:     purl,
+		width:   defGeom.w,
+		height:  defGeom.h,
+		nColors: defGeom.c,
+		zoom:    1.0,
+		imgType: *defType,
+		wrpMode: *wrpMode,
+		maxSize: *defImgSize,
+		jQual:   *defJpgQual,
+		proxy:   true,
+	}
+	var currentURL string
+	chromedp.Run(ctx, chromedp.Location(&currentURL))
+	currentURL = strings.Replace(currentURL, "https://", "http://", 1)
+	if currentURL != strings.Replace(rq.url, "https://", "http://", 1) {
+		rq.navigate()
+	}
+	rq.url = strings.Replace(rq.url, "https://", "http://", 1)
+	if r.Method == "CONNECT" {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusBadGateway)
+	}
+	if rq.wrpMode == "html" {
+		rq.captureMarkdown()
+		return
+	}
+	rq.captureScreenshot()
+}
+
+func isProxyRequest(r *http.Request) bool {
+	return r.URL.IsAbs() || r.Method == "CONNECT"
+}
+
+func pageServer(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s %s [%+v]\n", r.RemoteAddr, r.Method, r.URL, r.Host)
+	if isProxyRequest(r) {
+		proxyServer(w, r)
+		return
+	}
+	log.Printf("%s Page Request for %s [%+v]\n", r.RemoteAddr, r.URL.Path, r.URL.RawQuery)
+	rq := wrpReq{
+		r: r,
+		w: w,
+	}
+	rq.parseForm()
+	if len(rq.url) < 4 {
+		rq.printUI(uiParams{})
+		return
+	}
+	rq.navigate() // TODO: if error from navigate do not capture
+	if rq.wrpMode == "html" {
+		rq.captureMarkdown()
+		return
+	}
+	rq.captureScreenshot()
+}
+
+func pacServer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/x-ns-proxy-autoconfig")
+	fmt.Fprintf(w, `function FindProxyForURL(url, host) {
+	if (isPlainHostName(host) ||
+		host == "localhost" ||
+		isInNet(host, "127.0.0.0", "255.0.0.0") ||
+		isInNet(host, "10.0.0.0", "255.0.0.0") ||
+		isInNet(host, "172.16.0.0", "255.240.0.0") ||
+		isInNet(host, "192.168.0.0", "255.255.0.0") ||
+		isInNet(host, "169.254.0.0", "255.255.0.0"))
+		return "DIRECT";
+	return "PROXY %s";
+}
+`, r.Host)
+}
+
+func haltServer(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s Shutdown Request for %s\n", r.RemoteAddr, r.URL.Path)
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprintf(w, "Shutting down WRP...\n")
+	w.(http.Flusher).Flush()
+	time.Sleep(time.Second * 2)
+	cncl()
+	acncl()
+	srv.Shutdown(context.Background())
+	os.Exit(1)
+}
+
+func wrpTemplate(t string) string {
+	var tmpl []byte
+	fh, err := os.Open(t)
+	if err != nil {
+		goto builtin
+	}
+	defer fh.Close()
+
+	tmpl, err = io.ReadAll(fh)
+	if err != nil {
+		goto builtin
+	}
+	log.Printf("Got HTML UI template from %v file, size %v \n", t, len(tmpl))
+	return string(tmpl)
+
+builtin:
+	fhs, err := fs.Open("wrp.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fhs.Close()
+
+	tmpl, err = io.ReadAll(fhs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Got HTML UI template from embed\n")
+	return string(tmpl)
+}
+
+func main() {
+	var err error
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	flag.Parse()
+	log.Printf("Web Rendering Proxy Version %s (%v)\n", version, runtime.GOARCH)
+	log.Printf("Using embedded ca-certs from github.com/breml/rootcerts")
+	log.Printf("Args: %q", os.Args)
+	if len(os.Getenv("PORT")) > 0 {
+		*addr = ":" + os.Getenv(("PORT"))
+	}
+	printMyIPs(*addr)
+	log.Printf("Default mode: %v", *wrpMode)
+	n, err := fmt.Sscanf(*fgeom, "%dx%dx%d", &defGeom.w, &defGeom.h, &defGeom.c)
+	if err != nil || n != 3 {
+		log.Fatalf("Unable to parse -g geometry flag / %s", err)
+	}
+
+	cncl, acncl = chromedpStart()
+	defer cncl()
+	defer acncl()
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Printf("Interrupt - shutting down.")
+		cncl()
+		acncl()
+		srv.Shutdown(context.Background())
+		os.Exit(1)
+	}()
+
+	wrpCach.imgs = make(map[string]cachedImg)
+	wrpCach.maps = make(map[string]cachedMap)
+
+	http.HandleFunc("/", pageServer)
+	http.HandleFunc("/map/", mapServer)
+	http.HandleFunc("/img/", imgServerMap)
+	http.HandleFunc(imgZpfx, imgServerTxt)
+	http.HandleFunc("/proxy.pac", pacServer)
+	http.HandleFunc("/shutdown/", haltServer)
+	http.HandleFunc("/favicon.ico", http.NotFound)
+
+	log.Printf("Default Img Type: %v, Geometry: %+v", *defType, defGeom)
+
+	htmlTmpl, err = template.New("wrp.html").Parse(wrpTemplate(*htmFnam))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Print("Starting WRP http server")
+	srv.Addr = *addr
+	srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "CONNECT" {
+			pageServer(w, r)
+			return
+		}
+		http.DefaultServeMux.ServeHTTP(w, r)
+	})
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+}

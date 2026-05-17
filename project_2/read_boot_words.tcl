@@ -1,0 +1,31 @@
+set out [open "H:/testproject/project_2/read_boot_words.out" "w"]
+connect -url tcp:127.0.0.1:3121
+configparams force-mem-access 1
+targets -set -filter {name =~ "ARM Cortex-A9 MPCore #0"}
+
+puts $out "READ_BOOT_WORDS_BEGIN"
+foreach addr {
+    0x01000000 0x01000004 0x01000008 0x0100000c
+    0x01000010 0x01000014 0x01000018 0x0100001c
+    0x01000020 0x01000024 0x01000028 0x0100002c
+    0x01000030 0x01000034 0x01000038 0x0100003c
+    0x01000040 0x01000044 0x01000048 0x0100004c
+    0x01000050 0x01000054 0x01000058 0x0100005c
+    0x01000060 0x01000064 0x01000068 0x0100006c
+    0x01002404 0x01002408 0x0100240c 0x01002410
+    0x01002414 0x01002418 0x0100241c 0x01002420
+    0x01002424 0x01002428 0x0100242c 0x01002430
+    0x01002434 0x01002438 0x0100243c 0x01002440
+    0x01002444 0x01002448 0x0100244c 0x01002450
+    0x01002454 0x01002458 0x0100245c 0x01002460
+} {
+    if {[catch {mrd -value $addr} v]} {
+        puts $out [format "0x%08x READ_ERROR %s" $addr $v]
+    } else {
+        puts $out [format "0x%08x 0x%08x" $addr [expr {$v & 0xffffffff}]]
+    }
+}
+puts $out "READ_BOOT_WORDS_END"
+
+close $out
+disconnect

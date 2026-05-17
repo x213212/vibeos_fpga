@@ -1,0 +1,11 @@
+SDIO read-only probe
+sdio_init ok
+capacity=SDSC
+read sector0 ok
+sector0 first 8 words:
+0x4d9058eb 0x534f4453 0x00302e35 0x10e00802 0x00000002 0x0000f800 0x00ff003f 0x00000000
+sector0 sig=0x0000aa55
+fat16_mount failed
+This card may be FAT32/exFAT, or the SDIO read is not stable yet.
+
+SDIO_READONLY_PROBE_PRINTED=283
