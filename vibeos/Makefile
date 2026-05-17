@@ -26,7 +26,7 @@ WRP_DIR = $(THIRD_PARTY_DIR)/wrp
 CFLAGS = -nostdlib -fno-builtin -mcmodel=medany -march=$(RISCV_ARCH) -mabi=ilp32 -DLWIP_NO_CTYPE_H -DWITHOUT_ICONV_FILTER -g -Wall -w \
          -mno-relax \
          -I./ -I./runtime/jit -I./ports/mbedtls -I$(LWIP_DIR)/src/include -I$(LWIP_DIR)/src/core -I$(LWIP_DIR)/src/netif \
-         -I./apps/gbemu -I./apps/netsurf -I./apps/net/wget -I./apps/ssh -I./drivers/audio \
+         -I./apps/gbemu -I./apps/netsurf -I./apps/net/wget -I./apps/ssh -I./drivers/audio -I./drivers/sd \
          -I$(GBEMU_DIR)/include \
          -I$(LIBSSH2_DIR)/include -I$(LIBSSH2_DIR)/src \
          -I$(NSFB_DIR)/include -I$(NSFB_DIR)/src \
@@ -104,7 +104,8 @@ USER_SOURCES = user.c user_terminal.c user_gui.c user_fs_shell.c user_editor.c u
 APP_SOURCES = apps/netsurf/netsurf.c apps/editor/tool_editor.c apps/editor/tool_asm.c apps/net/wget/user_wget.c apps/net/ntp/user_ntp.c apps/ssh/ssh_client.c \
       apps/demo3d/demo3d.c apps/gbemu/gbemu_runtime.c apps/gbemu/gbemu_audio_stub.c
 
-DRIVER_SOURCES = drivers/virtio/virtio_disk.c drivers/virtio/virtio_net.c drivers/virtio/virtio_input.c drivers/ps_gem.c drivers/audio/ac97_audio.c
+DRIVER_SOURCES = drivers/virtio/virtio_disk.c drivers/virtio/virtio_net.c drivers/virtio/virtio_input.c drivers/ps_gem.c drivers/audio/ac97_audio.c \
+      drivers/sd/sdio_api.c drivers/sd/sd_fat.c
 
 GBEMU_CORE_SOURCES = $(GBEMU_DIR)/lib/cart.c $(GBEMU_DIR)/lib/cpu.c $(GBEMU_DIR)/lib/cpu_fetch.c $(GBEMU_DIR)/lib/cpu_proc.c \
       $(GBEMU_DIR)/lib/cpu_util.c $(GBEMU_DIR)/lib/dbg.c $(GBEMU_DIR)/lib/dma.c $(GBEMU_DIR)/lib/gamepad.c \

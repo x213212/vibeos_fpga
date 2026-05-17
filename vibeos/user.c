@@ -296,7 +296,7 @@ static void apply_completion(struct Window *w, int row, int token_start, int tok
 
 static int tab_complete_command(struct Window *w, int row, int token_start, int token_end) {
     static const char *cmds[] = {
-        "pwd", "format", "cd", "ls", "mkdir", "rm", "touch", "write", "cat", "wget", "open", "run", "jit", "gbemu", "demo3d", "frankenstein", "help", "clear", "mv", "rename", "netsurf", "ssh", "sftp", "wrp", "find", "mem", "df", "du", "alias", "unalias", "export", "unset", "source"
+        "pwd", "format", "cd", "ls", "sd", "sdls", "mkdir", "rm", "touch", "write", "cat", "wget", "open", "run", "jit", "gbemu", "demo3d", "frankenstein", "help", "clear", "mv", "rename", "netsurf", "ssh", "sftp", "wrp", "find", "mem", "df", "du", "alias", "unalias", "export", "unset", "source"
     };
     char prefix[COLS];
     int plen = token_end - token_start;

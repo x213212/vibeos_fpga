@@ -2,6 +2,7 @@
 #include "user_internal.h"
 #include "jit_debugger.h"
 #include "tcc_runtime.h"
+#include "drivers/sd/sd_fat.h"
 
 extern void ps_gem_probe(void);
 extern void ps_gem_init(void);
@@ -65,6 +66,21 @@ void append_dir_entries_sorted(struct dir_block *db, const char *title, const ch
 static void append_virtual_mount_entries(int show, int all, char *out, int *printed) {
     char row[128];
     if (!show || !out) return;
+    if (all) {
+        row[0] = '\0';
+        append_out_pad(row, sizeof(row), "drwx", 5); append_out_str(row, sizeof(row), " ");
+        append_out_pad(row, sizeof(row), "virt", 8); append_out_str(row, sizeof(row), " ");
+        append_out_pad(row, sizeof(row), "-", 19); append_out_str(row, sizeof(row), " ");
+        append_out_str(row, sizeof(row), "sd");
+    } else {
+        lib_strcpy(row, "d sd");
+    }
+    append_out_str(row, sizeof(row), "\n");
+    if (strlen(out) + strlen(row) < OUT_BUF_SIZE - 2) {
+        lib_strcat(out, row);
+        if (printed) *printed = 1;
+    }
+
     if (all) {
         row[0] = '\0';
         append_out_pad(row, sizeof(row), "drwx", 5); append_out_str(row, sizeof(row), " ");
@@ -606,8 +622,17 @@ static int cmd_handle_mem(struct Window *w, char *cmd, char *out) {
 static int cmd_handle_help(struct Window *w, char *cmd, char *out) {
     (void)w;
     if (strncmp(cmd, "help", 4) != 0 || (cmd[4] != '\0' && cmd[4] != ' ')) return 0;
-    lib_strcpy(out, "Commands: ls, find, mem, ethstat, df, du, mkdir, rm, mv, touch, cd, pwd, write, cat, wget, open, run, jit, gbemu, vim, asm, demo3d, frankenstein, netsurf, ssh, sftp, wrp, format, clear, env, export, unset, alias, unalias, source, ., echo\nType '<cmd> h' for usage.");
+        lib_strcpy(out, "Commands: ls, sd, sdls, find, mem, ethstat, df, du, mkdir, rm, mv, touch, cd, pwd, write, cat, wget, open, run, jit, gbemu, vim, asm, demo3d, frankenstein, netsurf, ssh, sftp, wrp, format, clear, env, export, unset, alias, unalias, source, ., echo\nType '<cmd> h' for usage.");
     return 1;
+}
+
+static int path_is_sd_root(const char *path) {
+    if (!path) return 0;
+    return strcmp(path, "sd") == 0 ||
+           strcmp(path, "/sd") == 0 ||
+           strcmp(path, "/sd/") == 0 ||
+           strcmp(path, "./sd") == 0 ||
+           strcmp(path, "./sd/") == 0;
 }
 
 static int cmd_handle_ethstat(struct Window *w, char *cmd, char *out) {
@@ -767,6 +792,27 @@ static void exec_single_cmd_legacy(struct Window *w, char *cmd) {
         snprintf(row, sizeof(row), "Disk Usage (BlockSize=%d):\n  Total: %8s (%u blocks)\n  Used:  %8s (%u blocks)\n  Free:  %8s (%u blocks)\n",
                  BSIZE, sz_total, total, sz_used, used, sz_free, free_blks);
         lib_strcpy(out, row);
+    } else if (strcmp(cmd, "sdls") == 0 || strncmp(cmd, "sdls ", 5) == 0 ||
+               strcmp(cmd, "sd") == 0 || strncmp(cmd, "sd ", 3) == 0) {
+        char *arg;
+        int all = 0;
+        if (strncmp(cmd, "sdls", 4) == 0) arg = cmd + 4;
+        else arg = cmd + 2;
+        while (*arg == ' ') arg++;
+        if (*arg == 'h' && (*(arg+1) == '\0' || *(arg+1) == ' ')) {
+            lib_strcpy(out, "usage: sd status | sd ls [-all] | sdls [-all]");
+            return;
+        }
+        if (strcmp(arg, "status") == 0) {
+            sd_fat_status(out, OUT_BUF_SIZE);
+            return;
+        }
+        if (strncmp(arg, "ls", 2) == 0 && (arg[2] == '\0' || arg[2] == ' ')) {
+            arg += 2;
+            while (*arg == ' ') arg++;
+        }
+        if (strncmp(arg, "-all", 4) == 0) all = 1;
+        sd_fat_list_root(out, OUT_BUF_SIZE, all);
     } else if (strncmp(cmd, "du", 2) == 0 && (cmd[2] == '\0' || cmd[2] == ' ')) {
         char *path_arg = cmd + 2; while (*path_arg == ' ') path_arg++;
         if (*path_arg == 'h' && (*(path_arg+1) == '\0' || *(path_arg+1) == ' ')) { lib_strcpy(out, "usage: du [-maxd N] [path]"); return; }
@@ -1022,6 +1068,10 @@ static void exec_single_cmd_legacy(struct Window *w, char *cmd) {
         char single_out[OUT_BUF_SIZE];
         single_out[0] = '\0';
         if (*path_arg != '\0' && strcmp(path_arg, "-all") != 0) {
+            if (path_is_sd_root(path_arg)) {
+                sd_fat_list_root(out, OUT_BUF_SIZE, all);
+                return;
+            }
             if (path_is_sftp(path_arg)) {
                 ssh_client_sftp_ls(sftp_subpath(path_arg), all, out, OUT_BUF_SIZE);
                 return;

@@ -62,6 +62,17 @@ ssh auth <password>
 ssh exec uname -a
 ```
 
+SD card root listing is also wired into the FPGA minimal shell. The stable
+bitstream enables PS SD0 on MIO 40..45; the OS uses a small PIO SDIO reader and
+FAT16/FAT32 root directory parser.
+
+```text
+sd status
+sd ls
+sdls
+ls /sd
+```
+
 The stable Ethernet loader uses:
 
 ```text

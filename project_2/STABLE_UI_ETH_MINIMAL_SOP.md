@@ -89,6 +89,37 @@ ssh auth <password>
 ssh exec uname -a
 ```
 
+Expected VibeOS-side SD card commands:
+
+```text
+sd status
+sd ls
+sdls
+ls /sd
+```
+
+The SD card path is source-backed by:
+
+```text
+vibeos/drivers/sd/sdio_api.c
+vibeos/drivers/sd/sd_fat.c
+vibeos/user_cmd.c
+```
+
+This is the old SDIO probe path brought into the shell. The earlier standalone
+probe files are still useful for reference:
+
+```text
+project_2/sdio_api.c
+project_2/fat16_api.c
+project_2/sdio_probe_output.txt
+```
+
+Do not confuse this with the VibeOS RAM disk fallback in
+`vibeos/drivers/virtio/virtio_disk.c`. In `FPGA_MINIMAL`, that RAM disk is
+cleared at boot, so plain `ls` on `/root` can still say `ERR: Run 'format'.`
+Use `ls /sd` or `sdls` to read the physical SD card root directory.
+
 Do not use a newly generated bitstream for this baseline test. If keyboard
 input or the UI breaks immediately after a network change, rerun the exact
 `release_vibeos_eth_stable.ps1` flow above first. If the exact flow passes
