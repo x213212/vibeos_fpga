@@ -26,14 +26,14 @@ separate output directory.
 This is the last verified flow where UI, USB keyboard/mouse, lwIP HTTP, and
 ping were all alive. Use this before changing Ethernet, USB, or GUI code.
 
-Run from Windows PowerShell:
+Run from the repository root in Windows PowerShell:
 
 ```powershell
-cd H:\testproject
+cd <repo-root>
 
-wsl --cd /mnt/h/testproject/vibeos --exec make profile=fpga_minimal FPGA_MTIME_HZ=50000000 os.bin
+wsl --cd ./vibeos --exec make profile=fpga_minimal FPGA_MTIME_HZ=50000000 os.bin
 
-powershell.exe -ExecutionPolicy Bypass -File H:\testproject\project_2\release_vibeos_eth_stable.ps1 H:/testproject/vibeos/os.bin
+powershell.exe -ExecutionPolicy Bypass -File .\project_2\release_vibeos_eth_stable.ps1 ./vibeos/os.bin
 
 Start-Sleep -Seconds 5
 ping -n 6 192.168.0.154
@@ -45,10 +45,10 @@ bitstream and its matching PS7 init:
 
 ```text
 BIT:
-H:\testproject\project_2\riscv_ps_ddr_hw_eth_clkdomain_probe_50\riscv_ps_ddr_hw.runs\impl_1\riscv_ps_ddr_wrapper.bit
+project_2/riscv_ps_ddr_hw_eth_clkdomain_probe_50/riscv_ps_ddr_hw.runs/impl_1/riscv_ps_ddr_wrapper.bit
 
 PS7 INIT:
-H:\testproject\project_2\riscv_ps_ddr_hw_eth_clkdomain_probe_50\riscv_ps_ddr_hw.srcs\sources_1\bd\riscv_ps_ddr\ip\riscv_ps_ddr_processing_system7_0_0\ps7_init.tcl
+project_2/riscv_ps_ddr_hw_eth_clkdomain_probe_50/riscv_ps_ddr_hw.srcs/sources_1/bd/riscv_ps_ddr/ip/riscv_ps_ddr_processing_system7_0_0/ps7_init.tcl
 ```
 
 Expected proof:
@@ -79,7 +79,7 @@ For OS-only reloads on the already programmed stable Ethernet bitstream, this
 is allowed:
 
 ```powershell
-& 'H:\Xilinx\vivado\Vivado\2019.2\bin\xsdb.bat' H:\testproject\project_2\release_vibeos_no_usb_reset.tcl H:/testproject/vibeos/os.bin
+& '<Vivado-2019.2>\bin\xsdb.bat' .\project_2\release_vibeos_no_usb_reset.tcl ./vibeos/os.bin
 ```
 
 But when recovering from a confusing state, prefer the full stable release
