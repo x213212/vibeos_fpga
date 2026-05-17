@@ -12,7 +12,7 @@ component-local license file controls.
 | Component | Path | License / notice source |
 | --- | --- | --- |
 | VibeOS FPGA original code | repository files without another notice | The Unlicense; see `LICENSE` |
-| VibeOS / mini-riscv-os derived code | `vibeos/` | Unlicense for local VibeOS contributions; mini-riscv-os portions under BSD-2-Clause; see `vibeos/LICENSE` |
+| VibeOS / mini-riscv-os derived code | `vibeos/` | Source repository: `https://github.com/x213212/vibeos.git`; Unlicense for local VibeOS contributions; mini-riscv-os portions under BSD-2-Clause; see `vibeos/LICENSE` |
 | ultraembedded RISC-V core | `ultraembedded_riscv/` | BSD-3-Clause-style license; see `ultraembedded_riscv/LICENSE` and full text below |
 | PicoRV32 | `picorv32/` | ISC license; see `picorv32/COPYING` |
 | PicoRV32 test material | `picorv32/tests/` | BSD-3-Clause-style license; see `picorv32/tests/LICENSE` |
