@@ -21,6 +21,21 @@ bring-up:
 Generated artifacts are intentionally not tracked. Rebuild `os.bin` and Vivado
 bitstreams locally from the source and scripts.
 
+## Build
+
+```bash
+make -C vibeos            # build the VibeOS image (os.bin)
+```
+
+Then, in Vivado, open the block design under `project_2/`, generate the
+bitstream, and program the Zynq-7020 over JTAG. `ps7_init.tcl` and the `.bit`
+file are Vivado outputs and are deliberately not tracked — regenerate them, or
+restore them from a local backup, before running the loader.
+
+Tool versions that this design is known to build with are listed under
+*Tool Versions* below; the Vivado version matters, because the block design is
+not forward-compatible.
+
 ## Last Known Working Ethernet/UI Flow
 
 ### Tool Versions
